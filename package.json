@@ -1,17 +1,17 @@
 {
-  "name": "task-manager",
+  "name": "tennis-tournament-scheduler",
   "version": "1.0.0",
-  "description": "Complete MERN Task Manager Application",
+  "description": "Full-stack Tennis Tournament Scheduler - Node.js, React, MongoDB",
   "scripts": {
-    "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend",
-    "start": "concurrently \"npm run prod --prefix backend\" \"npm start --prefix frontend\"",
-    "dev": "concurrently \"npm run dev --prefix backend\" \"npm start --prefix frontend\""
+    "install-all": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm start --prefix frontend\"",
+    "start": "concurrently \"npm start --prefix backend\" \"npx serve -s frontend/build -l 3000\"",
+    "build": "npm run build --prefix frontend",
+    "test": "npm test --prefix backend"
   },
   "devDependencies": {
-    "chai": "^5.1.2",
-    "concurrently": "^7.0.0",
-    "mocha": "^11.0.1"
+    "concurrently": "^7.0.0"
   },
-  "author": "Task Manager Team",
+  "author": "",
   "license": "ISC"
 }
