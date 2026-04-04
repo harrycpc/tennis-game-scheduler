@@ -33,7 +33,7 @@ export function Roster() {
     const fetchPlayers = async () => {
       try {
         const response = await axiosInstance.get('/api/players', authHeaders);
-        setPlayers(response.data);
+        setPlayers(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Failed to fetch players');
       } finally {
@@ -68,8 +68,9 @@ export function Roster() {
 
     try {
       const response = await axiosInstance.get(`/api/auth/users/search?q=${encodeURIComponent(value.trim())}`, authHeaders);
-      setSuggestions(response.data);
-      setShowSuggestions(response.data.length > 0);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setSuggestions(data);
+      setShowSuggestions(data.length > 0);
     } catch (error) {
       setSuggestions([]);
       setShowSuggestions(false);
