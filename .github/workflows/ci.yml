@@ -1,28 +1,135 @@
-name: CI
+# .github/workflows/ci.yml
+# CI/CD Pipeline for Tennis Tournament Scheduler
+# Triggers on push to main and pull requests to main.
+# Jobs: test (backend) → build (frontend) → deploy (EC2 via SSH)
+
+name: CI/CD Pipeline
 
 on:
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  # ─────────────────────────────────────────────
+  # Job 1: Backend Tests
+  # ─────────────────────────────────────────────
+  test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
 
-        steps:
-        - name: Checkout code
-            uses: actions/checkout@v2
+    strategy:
+      matrix:
+        node-version: [18.x]
 
-        - name: Set up Node.js
-            uses: actions/setup-node@v2
-            with:
-                node-version: '14'
+    env:
+      JWT_SECRET: ci-test-secret-key-for-testing-only
+      NODE_ENV: test
 
-        - name: Install dependencies
-            run: npm install
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-        - name: Run tests
-            run: npm test
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run backend tests
+        working-directory: ./backend
+        run: npm test
+
+  # ─────────────────────────────────────────────
+  # Job 2: Build Frontend
+  # ─────────────────────────────────────────────
+  build:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # Job 3: Deploy to EC2
+  # Only runs on push to main (not PRs)
+  # ─────────────────────────────────────────────
+  deploy:
+    name: Deploy to AWS EC2
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download frontend build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build/
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "──── Navigating to project directory ────"
+            cd ~/IFN584_Tennis_Scheduler
+
+            echo "──── Pulling latest changes ────"
+            git pull origin main
+
+            echo "──── Installing backend dependencies ────"
+            cd backend
+            npm ci --production
+            cd ..
+
+            echo "──── Installing frontend dependencies ────"
+            cd frontend
+            npm ci
+            npm run build
+            cd ..
+
+            echo "──── Restarting services with PM2 ────"
+            pm2 restart all || pm2 start ecosystem.config.js
+
+            echo "──── Deployment complete ────"
+            pm2 status

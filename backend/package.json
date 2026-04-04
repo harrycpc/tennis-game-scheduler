@@ -1,31 +1,31 @@
 {
-  "name": "task-manager-backend",
+  "name": "tennis-scheduler-backend",
   "version": "1.0.0",
-  "description": "Backend for Task Manager App",
+  "description": "Backend API for Tennis Tournament Scheduler",
   "main": "server.js",
   "scripts": {
-    "test": "mocha",
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "prod": "node server.js"
+    "seed": "node seed.js",
+    "test": "mocha --timeout 10000 --exit"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",
-    "chai": "^4.5.0",
-    "chai-http": "^4.3.0",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
+    "express-validator": "^7.0.1",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^6.0.14",
-    "request": "^2.88.2"
+    "mongoose": "^6.0.14"
   },
   "devDependencies": {
-    "esm": "^3.2.25",
+    "chai": "^4.5.0",
+    "chai-http": "^4.3.0",
     "mocha": "^11.0.1",
+    "mongodb-memory-server": "^10.0.0",
     "nodemon": "^2.0.15",
     "sinon": "^19.0.2"
   },
-  "author": "Task Manager Team",
+  "author": "",
   "license": "ISC"
 }
