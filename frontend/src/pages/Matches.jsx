@@ -26,8 +26,9 @@ export function Matches() {
     const fetchMatches = async () => {
       try {
         const response = await axiosInstance.get('/api/matches', authHeaders);
-        setMatches(response.data);
-        if (response.data.length > 0) setHasGenerated(true);
+        const data = Array.isArray(response.data) ? response.data : [];
+        setMatches(data);
+        if (data.length > 0) setHasGenerated(true);
       } catch (error) {
         console.error('Failed to fetch matches');
       } finally {
@@ -41,7 +42,7 @@ export function Matches() {
   const generateRoundRobin = async () => {
     try {
       const response = await axiosInstance.post('/api/matches/generate', { totalCourts, startHour }, authHeaders);
-      setMatches(response.data);
+      setMatches(Array.isArray(response.data) ? response.data : []);
       setHasGenerated(true);
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to generate schedule.');

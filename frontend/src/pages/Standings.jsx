@@ -18,7 +18,7 @@ export function Standings() {
         const response = await axiosInstance.get('/api/players', {
           headers: { Authorization: `Bearer ${user.token}` },
         });
-        setPlayers(response.data);
+        setPlayers(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Failed to fetch standings');
       } finally {
