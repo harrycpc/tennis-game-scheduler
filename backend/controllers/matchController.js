@@ -35,7 +35,8 @@ const getMatches = async (req, res) => {
     }).sort({ createdAt: 1 });
     res.json(matches);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('getMatches error:', error.message);
+    res.status(500).json([]);
   }
 };
 
@@ -81,12 +82,45 @@ const generateMatches = async (req, res) => {
     await Match.deleteMany({ createdBy: req.user.id });
 
     const playerNames = players.map((p) => p.name);
-    const generatedMatches = [];
-    let currentTime = startHour * 60;
-    let courtIndex = 0;
+    const n = playerNames.length;
 
-    for (let i = 0; i < playerNames.length; i++) {
-      for (let j = i + 1; j < playerNames.length; j++) {
+    // ── Round-robin tournament algorithm ──
+    // If odd number of players, add a "BYE" placeholder so every round
+    // has n/2 matches and no player sits out without being tracked.
+    const list = [...playerNames];
+    if (n % 2 !== 0) list.push(null); // null = BYE
+    const total = list.length;
+    const rounds = [];
+
+    // Generate rounds using the "circle method":
+    // Fix the first player, rotate the rest.
+    for (let round = 0; round < total - 1; round++) {
+      const roundMatches = [];
+      for (let i = 0; i < total / 2; i++) {
+        const home = list[i];
+        const away = list[total - 1 - i];
+        // Skip matches involving BYE
+        if (home !== null && away !== null) {
+          roundMatches.push({ player1: home, player2: away });
+        }
+      }
+      rounds.push(roundMatches);
+
+      // Rotate: keep list[0] fixed, rotate the rest clockwise
+      const last = list.pop();
+      list.splice(1, 0, last);
+    }
+
+    // ── Assign time slots and courts ──
+    // Each round gets a time slot. Within a round, matches are assigned
+    // to courts (up to totalCourts simultaneously). If a round has more
+    // matches than courts, they spill into the next time block.
+    const generatedMatches = [];
+    let currentTime = startHour * 60; // minutes since midnight
+
+    for (const roundMatches of rounds) {
+      let courtIndex = 0;
+      for (const match of roundMatches) {
         const courtLetter = String.fromCharCode(65 + (courtIndex % totalCourts));
         const hours = Math.floor(currentTime / 60);
         const minutes = currentTime % 60;
@@ -95,8 +129,8 @@ const generateMatches = async (req, res) => {
         const timeSlot = `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`;
 
         generatedMatches.push({
-          player1: playerNames[i],
-          player2: playerNames[j],
+          player1: match.player1,
+          player2: match.player2,
           courtName: `Court ${courtLetter}`,
           timeSlot,
           completed: false,
@@ -104,9 +138,15 @@ const generateMatches = async (req, res) => {
         });
 
         courtIndex++;
+        // If we've filled all courts, advance to the next time block
         if (courtIndex % totalCourts === 0) {
           currentTime += 90;
         }
+      }
+      // After each round, always advance to the next time block
+      // (even if courts weren't all filled)
+      if (courtIndex % totalCourts !== 0) {
+        currentTime += 90;
       }
     }
 
