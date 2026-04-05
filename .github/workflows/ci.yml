@@ -12,7 +12,7 @@ jobs:  # Define the jobs that will run in this workflow
 
     strategy:  # Define a strategy for running the job
       matrix:  # Use a matrix to run the job in multiple environments
-        node-version: [22]  # Test using Node.js version 22
+        node-version: [20]  # Test using Node.js version 22
 
     environment: MONGO_URI  # Define the environment variable for MongoDB connection
 
