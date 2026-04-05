@@ -38,7 +38,7 @@ A full-stack MERN application for managing tennis tournaments with role-based ac
 ## Project Structure
 
 ```
-IFN584_Tennis_Scheduler/
+tennis-game-scheduler/
 ├── .github/workflows/ci.yml     # CI/CD pipeline
 ├── ecosystem.config.js           # PM2 process config
 ├── backend/
@@ -103,8 +103,8 @@ IFN584_Tennis_Scheduler/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/IFN584_Tennis_Scheduler.git
-cd IFN584_Tennis_Scheduler
+git clone git@github.com:harrycpc/tennis-game-scheduler.git
+cd tennis-game-scheduler
 ```
 
 ### 2. Backend setup
@@ -271,18 +271,6 @@ The GitHub Actions workflow uses a **self-hosted runner** on your EC2 instance. 
 |--------|-------------|
 | `PROD` | Full `.env` file contents for production (all env vars on separate lines) |
 
-### Self-hosted runner setup on EC2:
-
-```bash
-# On your EC2 instance:
-mkdir actions-runner && cd actions-runner
-curl -o actions-runner-linux-x64-2.321.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-linux-x64-2.321.0.tar.gz
-tar xzf ./actions-runner-linux-x64-2.321.0.tar.gz
-./config.sh --url https://github.com/<YOUR_USERNAME>/<YOUR_REPO> --token <YOUR_TOKEN>
-sudo ./svc.sh install
-sudo ./svc.sh start
-```
-
 ---
 
 ## GitHub Branching Strategy
@@ -308,18 +296,3 @@ http://15.135.83.231
 | Player | `mike@demo.com` | `player123` |
 | Player | `emma@demo.com` | `player123` |
 | Player | `james@demo.com` | `player123` |
-
----
-
-## References
-
-- [React Documentation](https://react.dev/)
-- [Express.js Guide](https://expressjs.com/en/guide/routing.html)
-- [Mongoose Documentation](https://mongoosejs.com/docs/)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [Lucide React Icons](https://lucide.dev/)
-- [JWT Introduction](https://jwt.io/introduction)
-- [express-validator](https://express-validator.github.io/docs/)
-- [Mocha Testing Framework](https://mochajs.org/)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [PM2 Process Manager](https://pm2.keymetrics.io/docs/usage/quick-start/)
