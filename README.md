@@ -124,7 +124,6 @@ Edit `.env` with your MongoDB connection string:
 MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/tennis_scheduler
 JWT_SECRET=2J8zqkP7VN6bxzg+Wy7DQZCA3Yx8mF3Bl0kch6HYtFs=
 PORT=5001
-NODE_ENV=development
 ```
 
 ### 3. Seed the database
