@@ -1,135 +1,72 @@
-# .github/workflows/ci.yml
-# CI/CD Pipeline for Tennis Tournament Scheduler
-# Triggers on push to main and pull requests to main.
-# Jobs: test (backend) → build (frontend) → deploy (EC2 via SSH)
+name: Backend CI  # Define the name of the CI workflow
 
-name: CI/CD Pipeline
+on:  # Define the event that triggers the workflow
+  push:  # Trigger the workflow on a push event
+    branches:  # Specify the branches to monitor
+      - main  # Run CI/CD pipeline only when code is pushed to the main branch
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+jobs:  # Define the jobs that will run in this workflow
+  test:  # Job name (test job)
+    name: Run Tests  # Display name for the job
+    runs-on: self-hosted  # Specify the runner (self-hosted machine) to execute the job
 
-jobs:
-  # ─────────────────────────────────────────────
-  # Job 1: Backend Tests
-  # ─────────────────────────────────────────────
-  test:
-    name: Backend Tests
-    runs-on: ubuntu-latest
+    strategy:  # Define a strategy for running the job
+      matrix:  # Use a matrix to run the job in multiple environments
+        node-version: [22]  # Test using Node.js version 22
 
-    strategy:
-      matrix:
-        node-version: [18.x]
+    environment: MONGO_URI  # Define the environment variable for MongoDB connection
 
-    env:
-      JWT_SECRET: ci-test-secret-key-for-testing-only
-      NODE_ENV: test
+    steps:  # Define the sequence of steps to be executed in this job
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install backend dependencies
-        working-directory: ./backend
-        run: npm ci
-
-      - name: Run backend tests
-        working-directory: ./backend
-        run: npm test
-
-  # ─────────────────────────────────────────────
-  # Job 2: Build Frontend
-  # ─────────────────────────────────────────────
-  build:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v3  # Clone the repository code to the runner
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3  # Use the setup-node action to configure Node.js
         with:
-          node-version: 18.x
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          node-version: ${{ matrix.node-version }}  # Use the Node.js version specified in the matrix
 
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm ci
+      - name: Print Env Secret
+        env:  # Define environment variables for this step
+          MONGO_URI: ${{ secrets.MONGO_URI }}  # MongoDB connection string
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}  # JWT authentication secret
+          PORT: ${{ secrets.PORT }}  # Application port
+        run: |  # Run multiple shell commands
+          echo "Secret 1 is: $MONGO_URI"  # Print MongoDB URI
+          echo "Secret 2 is: $JWT_SECRET"  # Print JWT Secret
+          echo "Secret 3 is: $PORT"  # Print Application Port
 
-      - name: Build frontend
-        working-directory: ./frontend
-        run: npm run build
+      - run: pm2 stop all || true  # Stop all PM2-managed processes (|| true to avoid failure if none running)
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/build/
-          retention-days: 1
+      - name: Install Backend Dependencies
+        working-directory: ./backend  # Navigate to backend folder
+        run: |  # Run multiple commands
+          npm install --global yarn  # Install Yarn globally
+          yarn --version  # Verify Yarn installation
+          yarn install  # Install backend dependencies using Yarn
 
-  # ─────────────────────────────────────────────
-  # Job 3: Deploy to EC2
-  # Only runs on push to main (not PRs)
-  # ─────────────────────────────────────────────
-  deploy:
-    name: Deploy to AWS EC2
-    runs-on: ubuntu-latest
-    needs: [test, build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend  # Navigate to frontend folder
+        run: |  # Run multiple commands
+          df -h  # Show disk space usage
+          sudo rm -rf ./build  # Remove existing build directory
+          yarn install  # Install frontend dependencies
+          yarn run build  # Build the frontend application
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Run Backend Tests
+        env:  # Define environment variables for this step
+          MONGO_URI: ${{ secrets.MONGO_URI }}  # MongoDB connection string
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}  # JWT authentication secret
+          PORT: ${{ secrets.PORT }}  # Application port
+        working-directory: ./backend  # Navigate to backend folder
+        run: npm test  # Run backend tests
 
-      - name: Download frontend build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/build/
+      - run: npm ci  # Install dependencies using npm clean install
 
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            set -e
+      - run: |  # Run multiple commands
+          cd ./backend  # Navigate to backend folder
+          touch .env  # Create an empty .env file
+          echo "${{ secrets.PROD }}" > .env  # Write production secrets to .env file
 
-            echo "──── Navigating to project directory ────"
-            cd ~/IFN584_Tennis_Scheduler
-
-            echo "──── Pulling latest changes ────"
-            git pull origin main
-
-            echo "──── Installing backend dependencies ────"
-            cd backend
-            npm ci --production
-            cd ..
-
-            echo "──── Installing frontend dependencies ────"
-            cd frontend
-            npm ci
-            npm run build
-            cd ..
-
-            echo "──── Restarting services with PM2 ────"
-            pm2 restart all || pm2 start ecosystem.config.js
-
-            echo "──── Deployment complete ────"
-            pm2 status
+      - run: pm2 start all || pm2 start "npm run start" --name="backend" --cwd ./backend  # Start PM2-managed processes
+      - run: pm2 restart all  # Restart all PM2-managed processes
