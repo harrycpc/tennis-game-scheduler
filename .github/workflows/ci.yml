@@ -70,5 +70,12 @@ jobs:  # Define the jobs that will run in this workflow
           touch .env  # Create an empty .env file
           echo "${{ secrets.PROD }}" > .env  # Write production secrets to .env file
 
+      - name: Seed Database with Demo Data
+        env:  # Define environment variables for seeding
+          MONGO_URI: ${{ secrets.MONGO_URI }}  # MongoDB connection string
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}  # JWT authentication secret
+        working-directory: ./backend  # Navigate to backend folder
+        run: npm run seed  # Run seed script to populate database with demo data
+
       - run: pm2 start all || pm2 start "npm run start" --name="backend" --cwd ./backend  # Start PM2-managed processes
       - run: pm2 restart all  # Restart all PM2-managed processes
