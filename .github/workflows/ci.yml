@@ -53,15 +53,13 @@ jobs:  # Define the jobs that will run in this workflow
           yarn install  # Install frontend dependencies
           yarn run build  # Build the frontend application
 
-      # Disabled: Backend tests temporarily disabled due to Mocha/Node.js 22 compatibility issue
-      # - name: Run Backend Tests
-      #   env:  # Define environment variables for this step
-      #     MONGO_URI: ${{ secrets.MONGO_URI }}  # MongoDB connection string
-      #     JWT_SECRET: ${{ secrets.JWT_SECRET }}  # JWT authentication secret
-      #     PORT: ${{ secrets.PORT }}  # Application port
-      #   working-directory: ./backend  # Navigate to backend folder
-      #   run: npm test  # Run backend tests
-      # TODO: Resolve Node.js 22 compatibility with Mocha 11.0.1 or downgrade Node version
+      - name: Run Backend Tests
+        env:  # Define environment variables for this step
+          MONGO_URI: ${{ secrets.MONGO_URI }}  # MongoDB connection string
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}  # JWT authentication secret
+          PORT: ${{ secrets.PORT }}  # Application port
+        working-directory: ./backend  # Navigate to backend folder
+        run: npm test  # Run backend tests
 
       - run: npm ci  # Install dependencies using npm clean install
 
