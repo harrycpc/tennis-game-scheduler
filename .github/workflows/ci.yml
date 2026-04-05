@@ -6,8 +6,8 @@ on:  # Define the event that triggers the workflow
       - main  # Run CI/CD pipeline only when code is pushed to the main branch
 
 jobs:  # Define the jobs that will run in this workflow
-  test:  # Job name (test job)
-    name: Run Tests  # Display name for the job
+  deploy:  # Job name (deployment job)
+    name: Build and Deploy  # Display name for the job
     runs-on: self-hosted  # Specify the runner (self-hosted machine) to execute the job
 
     strategy:  # Define a strategy for running the job
