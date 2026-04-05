@@ -67,7 +67,6 @@ IFN584_Tennis_Scheduler/
 │   │   ├── components/
 │   │   │   ├── AppProviders.jsx
 │   │   │   ├── Root.jsx          # Layout with role badge + bottom nav
-│   │   │   ├── PhoneStatusBar.jsx
 │   │   │   └── ProtectedRoute.jsx
 │   │   ├── context/
 │   │   │   ├── AuthContext.js    # Auth state with role
@@ -293,10 +292,10 @@ sudo ./svc.sh start
 
 ---
 
-## Public URL
+## Public URL (EC2 instance Public IPv4 address)
 
 ```
-http://<YOUR_EC2_IP>:3000
+http://15.135.83.231
 ```
 
 ## Demo Credentials
