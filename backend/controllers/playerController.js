@@ -36,7 +36,8 @@ const getPlayers = async (req, res) => {
 
     res.json(players);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('getPlayers error:', error.message);
+    res.status(500).json([]);
   }
 };
 
