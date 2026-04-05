@@ -14,7 +14,7 @@ jobs:  # Define the jobs that will run in this workflow
       matrix:  # Use a matrix to run the job in multiple environments
         node-version: [22]  # Test using Node.js version 22
 
-    environment: PROD  # Reference the production environment containing secrets
+    environment: MONGO_URI  # Define the environment variable for MongoDB connection
 
     steps:  # Define the sequence of steps to be executed in this job
 
