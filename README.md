@@ -234,21 +234,54 @@ Tests use an in-memory MongoDB instance — no external database needed.
 
 ## CI/CD Pipeline
 
-The GitHub Actions workflow runs automatically on push to `main` and pull requests.
+The GitHub Actions workflow uses a **self-hosted runner** on your EC2 instance. When you push to `main`, the workflow runs directly on your EC2 — no SSH keys or remote connections needed.
 
-### Pipeline stages:
+### How it works:
 
-1. **Test** — Runs Mocha test suite with in-memory MongoDB
-2. **Build** — Creates production frontend build
-3. **Deploy** — (main branch only) SSH to EC2, pull, install, build, restart PM2
+1. Your EC2 instance runs a GitHub Actions runner as a background service
+2. On push to `main`, GitHub sends the job to your EC2 runner
+3. The runner checks out code, installs deps, builds frontend, runs tests, writes `.env`, and restarts PM2 — all directly on the server
+
+### Workflow steps:
+
+1. **Checkout Code** — clones repo onto EC2
+2. **Setup Node.js** — configures Node 22
+3. **Print Env Secret** — verifies environment secrets are accessible
+4. **pm2 stop all** — stops currently running app
+5. **Install Backend Dependencies** — `yarn install` in `./backend`
+6. **Install Frontend Dependencies** — `yarn install` + `yarn run build` in `./frontend`
+7. **Run Backend Tests** — `npm test` with MongoDB connection from secrets
+8. **npm ci** — clean install at root level
+9. **Create .env** — writes `PROD` secret to `backend/.env` for production
+10. **pm2 start/restart** — restarts the app with updated code
 
 ### Required GitHub Secrets:
 
+**Environment secrets** (under Settings → Environments → `MONGO_URI`):
+
 | Secret | Description |
 |--------|-------------|
-| `EC2_HOST` | EC2 public IP |
-| `EC2_USER` | SSH username (e.g., `ubuntu`) |
-| `EC2_SSH_KEY` | Private SSH key |
+| `MONGO_URI` | MongoDB connection string |
+| `JWT_SECRET` | JWT authentication secret key |
+| `PORT` | Application port (e.g., `5001`) |
+
+**Repository secret** (under Settings → Secrets and variables → Actions):
+
+| Secret | Description |
+|--------|-------------|
+| `PROD` | Full `.env` file contents for production (all env vars on separate lines) |
+
+### Self-hosted runner setup on EC2:
+
+```bash
+# On your EC2 instance:
+mkdir actions-runner && cd actions-runner
+curl -o actions-runner-linux-x64-2.321.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-linux-x64-2.321.0.tar.gz
+tar xzf ./actions-runner-linux-x64-2.321.0.tar.gz
+./config.sh --url https://github.com/<YOUR_USERNAME>/<YOUR_REPO> --token <YOUR_TOKEN>
+sudo ./svc.sh install
+sudo ./svc.sh start
+```
 
 ---
 
