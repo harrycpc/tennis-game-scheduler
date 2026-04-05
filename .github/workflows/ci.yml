@@ -41,6 +41,7 @@ jobs:  # Define the jobs that will run in this workflow
       - name: Install Backend Dependencies
         working-directory: ./backend  # Navigate to backend folder
         run: |  # Run multiple commands
+          rm -rf node_modules # Remove existing node_modules to ensure a clean install
           npm install --global yarn  # Install Yarn globally
           yarn --version  # Verify Yarn installation
           yarn install  # Install backend dependencies using Yarn
