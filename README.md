@@ -2,6 +2,8 @@
 
 A full-stack MERN application for managing tennis tournaments with role-based access control, CRUD operations, JWT authentication, automated round-robin scheduling, and CI/CD deployment.
 
+<img src="./docs/images/Home.png" width="200" alt="Tennis Scheduler Home Page" />
+
 ---
 
 ## Features
